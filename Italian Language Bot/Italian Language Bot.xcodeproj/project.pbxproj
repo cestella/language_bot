@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A853A17E2DFCA19E0074F469 /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A853A17D2DFCA19E0074F469 /* FoundationModels.framework */; };
 		A8FB2D7B2E05959300919D7F /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8FB2D7A2E05959300919D7F /* Speech.framework */; };
+		A8FB2D942E06DF9900919D7F /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = A8FB2D932E06DF9900919D7F /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +47,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A8FB2D942E06DF9900919D7F /* MarkdownUI in Frameworks */,
 				A8FB2D7B2E05959300919D7F /* Speech.framework in Frameworks */,
 				A853A17E2DFCA19E0074F469 /* FoundationModels.framework in Frameworks */,
 			);
@@ -109,6 +111,7 @@
 			);
 			name = "Italian Language Bot";
 			packageProductDependencies = (
+				A8FB2D932E06DF9900919D7F /* MarkdownUI */,
 			);
 			productName = "Italian Language Bot";
 			productReference = A853A16E2DFC9D6F0074F469 /* Italian Language Bot.app */;
@@ -165,6 +168,9 @@
 			);
 			mainGroup = A853A1652DFC9D6F0074F469;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A8FB2D922E06DEA600919D7F /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A853A16F2DFC9D6F0074F469 /* Products */;
 			projectDirPath = "";
@@ -509,6 +515,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A8FB2D922E06DEA600919D7F /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A8FB2D932E06DF9900919D7F /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A8FB2D922E06DEA600919D7F /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A853A1662DFC9D6F0074F469 /* Project object */;
 }

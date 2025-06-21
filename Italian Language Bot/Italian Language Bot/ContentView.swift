@@ -6,6 +6,7 @@ import Speech
 import AVFoundation
 import Observation
 import Accelerate
+import MarkdownUI
 
 // MARK: - Data Models
 
@@ -120,13 +121,47 @@ struct ScenarioMessage: Equatable {
     let text: String
 }
 
-@Generable
 struct LanguageFeedback: Equatable {
-    @Guide(description: "If you were a local language speaker, would you understand the speaker?  If not, then tell them why not.  If so, then tell them that they did a good job.  Write at least 3 sentences.")
-    let grammarPhrase: String
-    
-    @Guide(description: "If you were a local language speaker and you were told this phrase, what would you suggest they rewrite it as?  Write at least 3 sentences.")
-    let suggestedRewrite: String
+    let markdownFeedback: String
+}
+
+// MARK: – ChatBubble Shape
+
+struct ChatBubble: Shape {
+    let isFromCurrentUser: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let r: CGFloat = 16
+        let t: CGFloat = 8
+
+        if isFromCurrentUser {
+            // right‐side bubble with tail on bottom‐right
+            path.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+            path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r),
+                        radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r - t))
+            path.addLine(to: CGPoint(x: rect.maxX + t, y: rect.maxY - r))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r + t))
+            path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.maxY - r),
+                        radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.minX + r, y: rect.maxY))
+            path.addArc(center: CGPoint(x: rect.minX + r, y: rect.maxY - r),
+                        radius: r, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+            path.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r),
+                        radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        } else {
+            // mirror for left‐side bubble
+            let original = ChatBubble(isFromCurrentUser: true).path(in: rect)
+            let transform = CGAffineTransform(scaleX: -1, y: 1)
+                .concatenating(CGAffineTransform(translationX: rect.width, y: 0))
+            path = original.applying(transform)
+        }
+
+        return path
+    }
 }
 
 // MARK: - Modern Speech Recognizer
@@ -822,25 +857,44 @@ class LanguageLearningViewModel {
             .joined(separator: "\n")
         
         let prompt = """
-        You are an expert \(selectedLanguage.rawValue) language teacher. Provide detailed, educational feedback on this student's response.
+        You are an expert \(selectedLanguage.rawValue) language teacher with full fluency in \(selectedLanguage.rawValue). You are helping a student at \(selectedCEFRLevel.rawValue) level improve their language skills.
         
-        CONVERSATION CONTEXT:
+        **CONVERSATION CONTEXT:**
         \(conversationContext)
         
-        STUDENT'S RESPONSE: "\(userResponse)" (at \(selectedCEFRLevel.rawValue) level)
+        **STUDENT'S RESPONSE:** "\(userResponse)"
+        
+        Please provide educational feedback using this EXACT structure with proper markdown formatting:
+        
+        ## Conversation Summary
+        Briefly summarize what this conversation thread is about in 1-2 sentences.
+        
+        ## Contextual Analysis
+        Assess whether the student's phrase makes sense in the context of this conversation. Is it logically appropriate? If not, explain why and what topic would be more suitable.
+        
+        ## Grammatical Analysis
+        Analyze the grammar, including:
+        - **Verb conjugations:** Are they correct?
+        - **Word order:** Is the sentence structure proper?
+        - **Vocabulary usage:** Are the words appropriate and correctly used?
+        
+        ## Suggested Improvement
+        Provide a better version of what the student should have said and explain why this improvement is better.
+        
+        Be positive but firm in your feedback. Write in clear, complete sentences with proper spacing between sections.
         """
-        //Analyze both grammar (verb conjugations, word order, etc.) and contextual fit (does it follow the conversation logically?). Be specific about what's wrong and why. If off-topic, explain what would be more appropriate given the conversation context.
         print(prompt)
         do {
-            print("📱 Generating language feedback with guided generation...")
-            let response = try await session.respond(to: prompt, generating: LanguageFeedback.self)
+            print("📱 Generating comprehensive language feedback...")
+            let response = try await session.respond(to: prompt)
             print("✅ Feedback generated successfully")
             
-            let feedback = response.content
+            let markdownFeedback = response.content
+            print("Response:")
+            print(markdownFeedback)
             
-            // Add structured feedback as separate messages
-            conversations.append(ConversationMessage(role: .feedback, text: "✔ Grammar/Phrase:\n\(feedback.grammarPhrase)"))
-            conversations.append(ConversationMessage(role: .feedback, text: "🔄 Suggested rewrite:\n\(feedback.suggestedRewrite)"))
+            // Add markdown feedback as a single message
+            conversations.append(ConversationMessage(role: .feedback, text: markdownFeedback))
             
             lastError = ""
         } catch {
@@ -982,23 +1036,21 @@ struct ContentView: View {
                     Spacer()
                 } else {
                     // Conversation view
+                    // 🌟 Modern conversation pane
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 12) {
-                            ForEach(Array(viewModel.conversations.enumerated()), id: \.element.id) { index, message in
-                                let previousMessage: ConversationMessage? = {
-                                    guard index > 0 && index - 1 < viewModel.conversations.count else { return nil }
-                                    return viewModel.conversations[index - 1]
-                                }()
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(viewModel.conversations.enumerated()), id: \.1.id) { idx, msg in
                                 ConversationBubble(
-                                    message: message,
-                                    previousMessage: previousMessage
+                                    message: msg,
+                                    previousMessage: idx > 0 ? viewModel.conversations[idx-1] : nil
                                 )
                             }
                         }
                         .padding(.vertical, 16)
                     }
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(radius: 8, y: 4)
                     .padding(.horizontal, 16)
                     
                     // Recording controls
@@ -1315,14 +1367,27 @@ struct ConversationBubble: View {
                     }
                     
                     VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                        // Main message bubble
-                        Text(message.text)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(backgroundColorForRole(message.role))
-                            .foregroundColor(textColorForRole(message.role))
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .textSelection(.enabled)
+                        // 🎨 Modern chat bubble with markdown for feedback
+                        Group {
+                            if message.role == .feedback {
+                                // Use MarkdownUI for comprehensive markdown rendering
+                                Markdown(message.text)
+                                    .textSelection(.enabled)
+                            } else {
+                                // Regular text for non-feedback messages
+                                Text(message.text)
+                                    .textSelection(.enabled)
+                                    .multilineTextAlignment(.leading)
+                            }
+                        }
+                        .font(.system(size: 16, weight: .regular, design: .rounded))
+                        .padding(16)
+                        .background(
+                            ChatBubble(isFromCurrentUser: message.role == .user)
+                                .fill(backgroundColorForRole(message.role))
+                        )
+                        .foregroundColor(textColorForRole(message.role))
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                         
                         // Translation display
                         if showTranslation && !translation.isEmpty {
@@ -1522,3 +1587,4 @@ struct SettingsView: View {
 #Preview {
     ContentView()
 }
+
