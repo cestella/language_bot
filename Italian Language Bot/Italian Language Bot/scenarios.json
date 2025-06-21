@@ -1,0 +1,24 @@
+{
+  "scenarios": [
+    {
+      "category": "Meeting on the Street",
+      "scenarios": [
+        "Two good friends meet in a park, greet each other warmly and discuss what activities they could do together in the park",
+        "Old classmates bump into each other on a busy street corner after many years and catch up on their lives",
+        "A person asks a stranger for directions to the nearest train station while walking through the city center",
+        "Two neighbors meet while walking their dogs in the morning and chat about the weather and their pets",
+        "A tourist approaches a local person on the street to ask for recommendations about good restaurants in the area"
+      ]
+    },
+    {
+      "category": "Ordering Food",
+      "scenarios": [
+        "A customer enters a traditional Italian restaurant and asks the waiter about today's special dishes and wine recommendations",
+        "Someone with dietary restrictions visits a pizzeria and needs to discuss ingredients and gluten-free options with the staff",
+        "A group of friends arrives at a busy trattoria without a reservation and tries to get a table for dinner",
+        "A customer at a gelato shop asks to taste different flavors before deciding what to order for dessert",
+        "A person orders takeaway food from a local deli, asking about portion sizes and how long the food will stay fresh"
+      ]
+    }
+  ]
+}
